@@ -1,57 +1,139 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>IA Video Studio by Hougendra</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
-body{background:#0f111a;color:#fff;display:flex;min-height:100vh}
-.left{width:50%;padding:24px;background:#161a2a}
-.right{width:50%;background:#000;display:flex;align-items:center;justify-content:center;height:100vh}
-input,select{width:100%;padding:12px;background:#1f2540;border:1px solid #2a335a;border-radius:10px;color:#fff;margin-bottom:10px}
-.row{display:flex;gap:10px}.row>div{flex:1}
-.btn-main{width:100%;padding:14px;background:#fff;color:#000;border-radius:30px;font-weight:800;border:0;cursor:pointer;margin-top:12px}
-.result-box{background:#1f2540;border-radius:14px;padding:14px;margin-top:14px;font-size:13px;line-height:1.5}
-#preview{max-width:100%;max-height:100%;border-radius:12px;display:none}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>Hougendra King Cobra</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0a0a0a; color: #fff; font-family: Arial, sans-serif; }
+    header { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 10px; padding: 12px; background: #111; border-bottom: 1px solid #d4af37; }
+    .logo { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 50%; background: #ffd700; color: #000; font-weight: 900; }
+    main { width: min(100%, 650px); margin: auto; padding: 12px; }
+    .card, .post { margin-bottom: 12px; padding: 14px; border: 1px solid #333; border-radius: 12px; background: #1a1a1a; }
+    input, textarea { width: 100%; margin: 6px 0; padding: 12px; border: 1px solid #444; border-radius: 8px; background: #111; color: #fff; font: inherit; }
+    textarea { min-height: 100px; resize: vertical; }
+    button { width: 100%; margin-top: 8px; padding: 12px; border: 0; border-radius: 9px; background: #ffd700; color: #000; font-weight: 900; cursor: pointer; }
+    button:hover { background: #e6c200; }
+    .delete { width: auto; padding: 7px 10px; background: #382020; color: #fff; }
+    .meta { color: #aaa; font-size: 12px; }
+    .post-text { margin-top: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .empty { padding: 20px; color: #aaa; text-align: center; }
+    .notice { color: #aaa; font-size: 12px; line-height: 1.5; }
+  </style>
 </head>
 <body>
-<div class="left">
-<h1>IA Video Studio by Hougendra</h1>
-<p style="color:#888;font-size:12px;margin:10px 0">Subject + Action + Environment + Camera + Movement + Lighting + Mood</p>
-<input id="subject" value="A fox, bunny and monkey">
-<input id="action" value="finding a glowing treasure map">
-<input id="env" value="in a magical misty jungle">
-<div class="row"><div><select id="camera"><option>low tracking perspective</option></select></div><div><select id="move"><option>gradual push-in</option></select></div></div>
-<div class="row"><div><select id="light"><option>warm golden-hour light</option></select></div><div><select id="mood"><option>adventurous and joyful</option></select></div></div>
-<button class="btn-main" onclick="buildPrompt()">Build Final Prompt</button>
-<div id="out" class="result-box" style="display:none"><div id="finalText"></div><br><button onclick="copyPrompt()">Copy</button> <button onclick="generate()" style="background:#00d1ff;padding:6px 14px;border-radius:20px;border:0;font-weight:700">Generate ✨</button></div>
-</div>
-<div class="right"><div id="loader">Preview will appear here</div><img id="preview" /></div>
-<script>
-let lastPrompt="";
-function buildPrompt(){
- let s=document.getElementById('subject').value;
- let a=document.getElementById('action').value;
- let e=document.getElementById('env').value;
- let c=document.getElementById('camera').value;
- let m=document.getElementById('move').value;
- let l=document.getElementById('light').value;
- let mo=document.getElementById('mood').value;
- lastPrompt=`${s} ${a} ${e}, filmed from a ${c}, with a ${m}, ${l}, ${mo} mood, pixar 3d kids cartoon, 4k`;
- document.getElementById('finalText').innerText=lastPrompt;
- document.getElementById('out').style.display='block';
-}
-function copyPrompt(){navigator.clipboard.writeText(lastPrompt);alert('Copied!');}
-async function generate(){
- if(!lastPrompt){buildPrompt();}
- document.getElementById('loader').innerText='Generating... 5 sec...';
- let url=`https://image.pollinations.ai/prompt/${encodeURIComponent(lastPrompt)}?width=1024&height=1024&nologo=true&seed=${Date.now()}`;
- let img=document.getElementById('preview');
- img.onload=()=>{document.getElementById('loader').style.display='none';img.style.display='block';};
- img.src=url;
-}
-</script>
+  <header>
+    <div class="logo" aria-hidden="true">KC</div>
+    <strong>HOUGENDRA <span style="color:#ffd700">KING COBRA</span></strong>
+  </header>
+
+  <main>
+    <section class="card">
+      <label for="name">Your name</label>
+      <input id="name" maxlength="40" placeholder="Enter your name">
+
+      <label for="text">Your post</label>
+      <textarea id="text" maxlength="1000" placeholder="What’s happening?"></textarea>
+
+      <button id="postButton" type="button">POST</button>
+      <p class="notice">Posts are stored only in this browser on this device. They are not shared with other visitors.</p>
+    </section>
+
+    <section id="feed" aria-live="polite"></section>
+  </main>
+
+  <script>
+    "use strict";
+
+    const STORAGE_KEY = "hougendra_king_cobra_posts_v1";
+    const nameInput = document.getElementById("name");
+    const textInput = document.getElementById("text");
+    const feed = document.getElementById("feed");
+
+    function readPosts() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        return Array.isArray(saved) ? saved : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function savePosts(posts) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+    }
+
+    function renderPosts() {
+      const posts = readPosts();
+      feed.replaceChildren();
+
+      if (posts.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No posts yet. Write the first one!";
+        feed.appendChild(empty);
+        return;
+      }
+
+      posts.forEach((post) => {
+        const article = document.createElement("article");
+        article.className = "post";
+
+        const heading = document.createElement("strong");
+        heading.textContent = "🐍 " + post.name;
+
+        const time = document.createElement("div");
+        time.className = "meta";
+        time.textContent = post.time;
+
+        const content = document.createElement("div");
+        content.className = "post-text";
+        content.textContent = post.text;
+
+        const remove = document.createElement("button");
+        remove.className = "delete";
+        remove.type = "button";
+        remove.textContent = "Delete";
+        remove.addEventListener("click", () => {
+          savePosts(readPosts().filter((item) => item.id !== post.id));
+          renderPosts();
+        });
+
+        article.append(heading, time, content, remove);
+        feed.appendChild(article);
+      });
+    }
+
+    document.getElementById("postButton").addEventListener("click", () => {
+      const name = nameInput.value.trim().slice(0, 40) || "KING";
+      const text = textInput.value.trim();
+
+      if (!text) {
+        alert("Please write something first.");
+        textInput.focus();
+        return;
+      }
+
+      const posts = readPosts();
+      posts.unshift({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        name,
+        text: text.slice(0, 1000),
+        time: new Date().toLocaleString()
+      });
+
+      try {
+        savePosts(posts);
+        textInput.value = "";
+        renderPosts();
+      } catch {
+        alert("Could not save the post. Check your browser storage settings.");
+      }
+    });
+
+    renderPosts();
+  </script>
 </body>
 </html>
